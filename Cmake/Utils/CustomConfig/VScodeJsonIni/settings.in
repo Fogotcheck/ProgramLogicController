@@ -1,0 +1,14 @@
+{
+    "cmake.configureOnOpen": true,
+    "cmake.generator": "Ninja",
+    "cmake.configureArgs": [
+        "-DCMAKE_TOOLCHAIN_FILE=${workspaceFolder_env}/Cmake/Toolcain/Arm-none-eabi-toolchain.cmake",
+        "-DOPENOCD_ENABLE=${OPENOCD_ENABLE}",
+        "-DENVIRONMENT_VSCODE=${ENVIRONMENT_VSCODE}",
+    ],
+    "cmake.buildArgs": [],
+    "files.associations": {
+    },
+    "cortex-debug.variableUseNaturalFormat": true
+}
+

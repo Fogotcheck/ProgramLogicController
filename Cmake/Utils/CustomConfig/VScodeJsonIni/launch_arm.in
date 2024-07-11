@@ -1,0 +1,28 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Openocd Debug",
+            "cwd": "${CMAKE_SOURCE_DIR}",
+            "executable": "${ExeProvider_env}",
+            "request": "launch",
+            "type": "cortex-debug",
+            "device": "${MCU_DEVICE}",
+            "runToEntryPoint": "main",
+            "servertype": "openocd",
+            "gdbPath": "${CMAKE_GDB}",
+            "serverpath": "${OPENOCD_EXE}",
+            "showDevDebugOutput": "raw",
+            "configFiles": [
+                "${OPENOCD_INTERFACE}",
+                "${OPENOCD_TARGET}"
+            ],
+            "openOCDLaunchCommands": [
+                "adapter speed 4000"
+            ],
+            "preLaunchCommands": [
+                "set mem inaccessible-by-default off"
+            ]
+        }
+    ]
+}

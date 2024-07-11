@@ -1,0 +1,10 @@
+{
+    "configurations": [
+        {
+            "name": "${CMAKE_SYSTEM_NAME}_${PROJECT_NAME}",
+            "compilerPath": "${CMAKE_C_COMPILER}",
+            "configurationProvider": "ms-vscode.cmake-tools"
+        }
+    ],
+    "version": 4
+}

@@ -1,2 +1,5 @@
 build/**
 .vscode/**
+Lib/StCube/.cproject
+Lib/StCube/.mxproject
+Lib/StCube/.project
