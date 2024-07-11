@@ -18,7 +18,6 @@ target_link_libraries(
     ${PROJECT_NAME}StInterface
 )
 
-
 add_subdirectory(FreeRTOS/Source)
 
 add_library(
@@ -35,5 +34,5 @@ target_link_libraries(
 target_link_libraries(
     freertos_kernel
     INTERFACE
-    FreeRtos  
+    FreeRtos
 )
