@@ -19,4 +19,5 @@ target_include_directories(
 target_link_libraries(
     ${PROJECT_NAME}
     ${PROJECT_NAME}StInterface
+    FreeRtos
 )
