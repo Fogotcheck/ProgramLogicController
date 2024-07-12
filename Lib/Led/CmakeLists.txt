@@ -1,25 +1,20 @@
 cmake_minimum_required(VERSION 3.22)
 
-set(ModuleName "AppMain")
+set(ModuleName "Led")
 set(${ModuleName}Src Src/${ModuleName}.c)
 set(${ModuleName}Head Inc)
 
-target_sources(
-    ${PROJECT_NAME}
-    PRIVATE
-    ${${ModuleName}Src}
-)
-
+add_library(${ModuleName} ${${ModuleName}Src})
 target_include_directories(
-    ${PROJECT_NAME}
+    ${ModuleName}
     PRIVATE
     ${${ModuleName}Head}
 )
 
 target_link_libraries(
-    ${PROJECT_NAME}
+    ${ModuleName}
     ${PROJECT_NAME}StInterface
     FreeRtos
-
-    ${PROJECT_NAME}Components
 )
+
+target_add_components(${ModuleName} ${ModuleName}Head)
