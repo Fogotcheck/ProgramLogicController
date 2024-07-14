@@ -22,7 +22,7 @@ add_subdirectory(FreeRTOS/Source)
 
 add_library(
     FreeRtos
-    FreeRtosCust/FreeRtosCustom.c
+    FreeRtosCust/cmsis_os2.c
 )
 
 target_link_libraries(

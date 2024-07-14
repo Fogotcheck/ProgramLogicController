@@ -20,6 +20,6 @@ target_link_libraries(
     ${PROJECT_NAME}
     ${PROJECT_NAME}StInterface
     FreeRtos
-
+    lwip
     ${PROJECT_NAME}Components
 )

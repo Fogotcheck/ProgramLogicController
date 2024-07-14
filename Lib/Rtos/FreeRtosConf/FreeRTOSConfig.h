@@ -53,6 +53,10 @@
   extern uint32_t SystemCoreClock;
 #endif
 
+#ifndef CMSIS_device_header
+#define CMSIS_device_header "stm32f4xx.h"
+#endif /* CMSIS_device_header */
+
 #define configENABLE_FPU                         0
 #define configENABLE_MPU                         0
 #define portARMV8M_MINOR_VERSION                 0

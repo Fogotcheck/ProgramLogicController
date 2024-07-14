@@ -1,0 +1,57 @@
+function(target_link_interface TargetName TargetInterface)
+    target_link_libraries(
+        ${TargetName}
+        ${TargetInterface}
+    )
+    target_link_libraries(
+        ${TargetInterface}
+        INTERFACE
+        ${TargetName}
+    )
+endfunction(target_link_interface TargetName TargetInterface)
+
+cmake_minimum_required(VERSION 3.22)
+
+set(LWIP_DIR lwip)
+set(LWIP_INCLUDE_DIRS
+    "${LWIP_DIR}/src/include"
+    "${LWIP_DIR}/contrib"
+)
+
+add_library(lwip INTERFACE)
+
+target_link_libraries(
+    lwip
+    INTERFACE
+    ${PROJECT_NAME}StInterface
+    FreeRtos
+)
+
+target_include_directories(
+    lwip
+    SYSTEM INTERFACE
+    ${LWIP_INCLUDE_DIRS}
+    lwipOpts
+    target/ports/freertos/include
+    target/phy
+    target
+    app
+)
+
+include(${LWIP_DIR}/src/Filelists.cmake)
+
+add_library(lwip_port)
+
+target_sources(
+    lwip_port
+    PRIVATE
+    target/ports/freertos/sys_arch.c
+    target/phy/lan8742.c
+    target/ethernetif.c
+    app/lwip.c
+)
+
+target_link_interface(lwipcore lwip)
+target_link_interface(lwipallapps lwip)
+target_link_interface(lwipmbedtls lwip)
+target_link_interface(lwip_port lwip)

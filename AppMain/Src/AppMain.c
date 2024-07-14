@@ -14,6 +14,9 @@ void AppMain(void)
 
 void MainThread(__attribute__((unused)) void *arg)
 {
+	if (osKernelInitialize()) {
+		Error_Handler();
+	}
 	if (LedInit()) {
 		Error_Handler();
 	}
@@ -22,7 +25,7 @@ void MainThread(__attribute__((unused)) void *arg)
 		LedStart(i, 1000 * (i + 1));
 	}
 	LedStop(LED_ERR);
-
+	MX_LWIP_Init();
 	while (1) {
 		vTaskDelay(100);
 	}
