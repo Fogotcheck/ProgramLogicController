@@ -2,11 +2,13 @@
 CAD.formats=
 CAD.pinconfig=
 CAD.provider=
-ETH.IPParameters=MediaInterface,PHY_Name,PHY_Value,PhyAddress
+ETH.IPParameters=MediaInterface,PHY_Name,PHY_Value,PhyAddress,RxMode,RxBuffLen
 ETH.MediaInterface=HAL_ETH_RMII_MODE
 ETH.PHY_Name=LAN8742A_PHY_ADDRESS
 ETH.PHY_Value=0
 ETH.PhyAddress=0
+ETH.RxBuffLen=1536
+ETH.RxMode=ETH_RXINTERRUPT_MODE
 File.Version=6
 KeepUserPlacement=false
 Mcu.CPN=STM32F439ZIT6
