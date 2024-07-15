@@ -5,7 +5,7 @@ void MainThread(void *arg);
 void AppMain(void)
 {
 	BaseType_t ret =
-		xTaskCreate(MainThread, "MainTask", 200, NULL, 1, NULL);
+		xTaskCreate(MainThread, "MainTask", 500, NULL, 1, NULL);
 	if (ret != pdPASS) {
 		Error_Handler();
 	}
@@ -17,16 +17,30 @@ void MainThread(__attribute__((unused)) void *arg)
 	if (osKernelInitialize()) {
 		Error_Handler();
 	}
-	if (LedInit()) {
+	if (DLogInit()) {
 		Error_Handler();
 	}
+
+	if (LedInit()) {
+		ErrMessage();
+		Error_Handler();
+	}
+	if (MX_LWIP_Init()) {
+		ErrMessage();
+		Error_Handler();
+	}
+	InfoMessage("Init::OK");
 	vTaskDelay(1000);
 	for (uint8_t i = 0; i < LED_ERR; i++) {
-		LedStart(i, 1000 * (i + 1));
+		if (LedStart(i, 1000 * (i + 1))) {
+			WarningMessage();
+		}
 	}
-	LedStop(LED_ERR);
-	MX_LWIP_Init();
+	if (LedStop(LED_ERR)) {
+		WarningMessage();
+	}
+
 	while (1) {
-		vTaskDelay(100);
+		vTaskDelay(1000);
 	}
 }

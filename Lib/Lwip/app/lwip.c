@@ -22,7 +22,7 @@
 #include "lwip.h"
 #include "lwip/init.h"
 #include "lwip/netif.h"
-#if defined ( __CC_ARM )  /* MDK ARM Compiler */
+#if defined(__CC_ARM) /* MDK ARM Compiler */
 #include "lwip/sio.h"
 #endif /* MDK ARM Compiler */
 #include "ethernetif.h"
@@ -46,7 +46,7 @@ ip4_addr_t ipaddr;
 ip4_addr_t netmask;
 ip4_addr_t gw;
 /* USER CODE BEGIN OS_THREAD_ATTR_CMSIS_RTOS_V2 */
-#define INTERFACE_THREAD_STACK_SIZE ( 1024 )
+#define INTERFACE_THREAD_STACK_SIZE (1024)
 osThreadAttr_t attributes;
 /* USER CODE END OS_THREAD_ATTR_CMSIS_RTOS_V2 */
 
@@ -57,43 +57,46 @@ osThreadAttr_t attributes;
 /**
   * LwIP initialization function
   */
-void MX_LWIP_Init(void)
+int MX_LWIP_Init(void)
 {
-  /* Initialize the LwIP stack with RTOS */
-  tcpip_init( NULL, NULL );
+	/* Initialize the LwIP stack with RTOS */
+	tcpip_init(NULL, NULL);
 
-  /* IP addresses initialization with DHCP (IPv4) */
-  ipaddr.addr = 0;
-  netmask.addr = 0;
-  gw.addr = 0;
+	/* IP addresses initialization with DHCP (IPv4) */
+	ipaddr.addr = 0;
+	netmask.addr = 0;
+	gw.addr = 0;
 
-  /* add the network interface (IPv4/IPv6) with RTOS */
-  netif_add(&gnetif, &ipaddr, &netmask, &gw, NULL, &ethernetif_init, &tcpip_input);
+	/* add the network interface (IPv4/IPv6) with RTOS */
+	netif_add(&gnetif, &ipaddr, &netmask, &gw, NULL, &ethernetif_init,
+		  &tcpip_input);
 
-  /* Registers the default network interface */
-  netif_set_default(&gnetif);
+	/* Registers the default network interface */
+	netif_set_default(&gnetif);
 
-  /* We must always bring the network interface up connection or not... */
-  netif_set_up(&gnetif);
+	/* We must always bring the network interface up connection or not... */
+	netif_set_up(&gnetif);
 
-  /* Set the link callback function, this function is called on change of link status*/
-  netif_set_link_callback(&gnetif, ethernet_link_status_updated);
+	/* Set the link callback function, this function is called on change of link status*/
+	netif_set_link_callback(&gnetif, ethernet_link_status_updated);
 
-  /* Create the Ethernet link handler thread */
-/* USER CODE BEGIN H7_OS_THREAD_NEW_CMSIS_RTOS_V2 */
-  memset(&attributes, 0x0, sizeof(osThreadAttr_t));
-  attributes.name = "EthLink";
-  attributes.stack_size = INTERFACE_THREAD_STACK_SIZE;
-  attributes.priority = osPriorityBelowNormal;
-  osThreadNew(ethernet_link_thread, &gnetif, &attributes);
-/* USER CODE END H7_OS_THREAD_NEW_CMSIS_RTOS_V2 */
+	/* Create the Ethernet link handler thread */
+	/* USER CODE BEGIN H7_OS_THREAD_NEW_CMSIS_RTOS_V2 */
+	memset(&attributes, 0x0, sizeof(osThreadAttr_t));
+	attributes.name = "EthLink";
+	attributes.stack_size = INTERFACE_THREAD_STACK_SIZE;
+	attributes.priority = osPriorityBelowNormal;
+	osThreadId_t ret =
+		osThreadNew(ethernet_link_thread, &gnetif, &attributes);
+	/* USER CODE END H7_OS_THREAD_NEW_CMSIS_RTOS_V2 */
 
-  /* Start DHCP negotiation for a network interface (IPv4) */
-  dhcp_start(&gnetif);
+	/* Start DHCP negotiation for a network interface (IPv4) */
+	dhcp_start(&gnetif);
 
-/* USER CODE BEGIN 3 */
+	/* USER CODE BEGIN 3 */
 
-/* USER CODE END 3 */
+	/* USER CODE END 3 */
+	return ret == NULL ? -1 : 0;
 }
 
 #ifdef USE_OBSOLETE_USER_CODE_SECTION_4
@@ -110,19 +113,17 @@ void MX_LWIP_Init(void)
   */
 static void ethernet_link_status_updated(struct netif *netif)
 {
-  if (netif_is_up(netif))
-  {
-/* USER CODE BEGIN 5 */
-/* USER CODE END 5 */
-  }
-  else /* netif is down */
-  {
-/* USER CODE BEGIN 6 */
-/* USER CODE END 6 */
-  }
+	if (netif_is_up(netif)) {
+		/* USER CODE BEGIN 5 */
+		/* USER CODE END 5 */
+	} else /* netif is down */
+	{
+		/* USER CODE BEGIN 6 */
+		/* USER CODE END 6 */
+	}
 }
 
-#if defined ( __CC_ARM )  /* MDK ARM Compiler */
+#if defined(__CC_ARM) /* MDK ARM Compiler */
 /**
  * Opens a serial device for communication.
  *
@@ -131,13 +132,13 @@ static void ethernet_link_status_updated(struct netif *netif)
  */
 sio_fd_t sio_open(u8_t devnum)
 {
-  sio_fd_t sd;
+	sio_fd_t sd;
 
-/* USER CODE BEGIN 7 */
-  sd = 0; // dummy code
-/* USER CODE END 7 */
+	/* USER CODE BEGIN 7 */
+	sd = 0; // dummy code
+	/* USER CODE END 7 */
 
-  return sd;
+	return sd;
 }
 
 /**
@@ -150,8 +151,8 @@ sio_fd_t sio_open(u8_t devnum)
  */
 void sio_send(u8_t c, sio_fd_t fd)
 {
-/* USER CODE BEGIN 8 */
-/* USER CODE END 8 */
+	/* USER CODE BEGIN 8 */
+	/* USER CODE END 8 */
 }
 
 /**
@@ -167,12 +168,12 @@ void sio_send(u8_t c, sio_fd_t fd)
  */
 u32_t sio_read(sio_fd_t fd, u8_t *data, u32_t len)
 {
-  u32_t recved_bytes;
+	u32_t recved_bytes;
 
-/* USER CODE BEGIN 9 */
-  recved_bytes = 0; // dummy code
-/* USER CODE END 9 */
-  return recved_bytes;
+	/* USER CODE BEGIN 9 */
+	recved_bytes = 0; // dummy code
+	/* USER CODE END 9 */
+	return recved_bytes;
 }
 
 /**
@@ -186,12 +187,11 @@ u32_t sio_read(sio_fd_t fd, u8_t *data, u32_t len)
  */
 u32_t sio_tryread(sio_fd_t fd, u8_t *data, u32_t len)
 {
-  u32_t recved_bytes;
+	u32_t recved_bytes;
 
-/* USER CODE BEGIN 10 */
-  recved_bytes = 0; // dummy code
-/* USER CODE END 10 */
-  return recved_bytes;
+	/* USER CODE BEGIN 10 */
+	recved_bytes = 0; // dummy code
+	/* USER CODE END 10 */
+	return recved_bytes;
 }
 #endif /* MDK ARM Compiler */
-
