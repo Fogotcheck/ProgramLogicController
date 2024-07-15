@@ -14,6 +14,7 @@ void AppMain(void)
 
 void MainThread(__attribute__((unused)) void *arg)
 {
+	/* init modules*/
 	if (osKernelInitialize()) {
 		Error_Handler();
 	}
@@ -31,6 +32,7 @@ void MainThread(__attribute__((unused)) void *arg)
 	}
 	InfoMessage("Init::OK");
 	vTaskDelay(1000);
+	/* start setiings */
 	for (uint8_t i = 0; i < LED_ERR; i++) {
 		if (LedStart(i, 1000 * (i + 1))) {
 			WarningMessage();

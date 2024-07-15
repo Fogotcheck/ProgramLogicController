@@ -287,8 +287,7 @@ int CustVsnprintf(char *str, size_t size, const char *format, va_list ap)
 
 void DSendMSG(int len)
 {
-	if ((DLog_CustPRINTF_EN & LogLevelMask) == 0) {
-		return;
+	if ((DLog_CustPRINTF_EN & LogLevelMask)) {
+		HAL_UART_Transmit(DLogUart, (uint8_t *)DLogBuf, len, 5);
 	}
-	HAL_UART_Transmit(DLogUart, (uint8_t *)DLogBuf, len, 5);
 }
