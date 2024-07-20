@@ -1,6 +1,9 @@
 #include "AppMain.h"
 
+EventGroupHandle_t MainEvent = NULL;
+
 void MainThread(void *arg);
+void MainEventHandler(EventBits_t Event);
 
 void AppMain(void)
 {
@@ -14,10 +17,17 @@ void AppMain(void)
 
 void MainThread(__attribute__((unused)) void *arg)
 {
-	/* init modules*/
+	/* init main */
 	if (osKernelInitialize()) {
 		Error_Handler();
 	}
+
+	MainEvent = xEventGroupCreate();
+	if (MainEvent == NULL) {
+		Error_Handler();
+	}
+
+	/* init modules*/
 	if (DLogInit()) {
 		Error_Handler();
 	}
@@ -30,6 +40,7 @@ void MainThread(__attribute__((unused)) void *arg)
 		ErrMessage();
 		Error_Handler();
 	}
+
 	InfoMessage("Init::OK");
 	vTaskDelay(1000);
 	/* start setiings */
@@ -41,8 +52,33 @@ void MainThread(__attribute__((unused)) void *arg)
 	if (LedStop(LED_ERR)) {
 		WarningMessage();
 	}
-
+	EventBits_t Event = 0;
+	EventBits_t Mask = 1;
 	while (1) {
-		vTaskDelay(1000);
+		Event = xEventGroupWaitBits(MainEvent, MAIN_ALL_EVENTS, pdFALSE,
+					    pdFALSE, portMAX_DELAY);
+		Mask = 1;
+		for (uint8_t i = 0; i < configUSE_16_BIT_TICKS; i++) {
+			if (Event & Mask) {
+				MainEventHandler(Event & Mask);
+			}
+			Mask <<= 1;
+		}
+	}
+}
+
+void MainEventHandler(EventBits_t Event)
+{
+	xEventGroupClearBits(MainEvent, Event);
+	InfoMessage("event::0x%x", Event);
+	switch (Event) {
+	case ETH_LINK_UP:
+		LedStart(LED_LINK, 200);
+		break;
+	case ETH_LINK_DOWN:
+		LedStart(LED_LINK, 2000);
+		break;
+	default:
+		break;
 	}
 }

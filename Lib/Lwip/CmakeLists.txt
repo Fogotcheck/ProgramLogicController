@@ -25,6 +25,7 @@ target_link_libraries(
     INTERFACE
     ${PROJECT_NAME}StInterface
     FreeRtos
+    MainEvents
 )
 
 target_include_directories(

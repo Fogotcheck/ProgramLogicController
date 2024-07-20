@@ -21,5 +21,6 @@ target_link_libraries(
     ${PROJECT_NAME}StInterface
     FreeRtos
     lwip
+    MainEvents
     ${PROJECT_NAME}Components
 )
