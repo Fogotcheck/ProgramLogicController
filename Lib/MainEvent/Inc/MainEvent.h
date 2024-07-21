@@ -6,7 +6,7 @@
 
 extern EventGroupHandle_t MainEvent;
 
-enum MainEvents {
+enum MainEventsEnum {
 	ETH_LINK_UP = (EventBits_t)(1 << 0),
 	ETH_LINK_DOWN = (EventBits_t)(1 << 1),
 

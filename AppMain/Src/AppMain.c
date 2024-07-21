@@ -40,6 +40,9 @@ void MainThread(__attribute__((unused)) void *arg)
 		ErrMessage();
 		Error_Handler();
 	}
+	if (MqttClientInit()) {
+		ErrMessage();
+	}
 
 	InfoMessage("Init::OK");
 	vTaskDelay(1000);
@@ -52,6 +55,7 @@ void MainThread(__attribute__((unused)) void *arg)
 	if (LedStop(LED_ERR)) {
 		WarningMessage();
 	}
+
 	EventBits_t Event = 0;
 	EventBits_t Mask = 1;
 	while (1) {
@@ -74,9 +78,11 @@ void MainEventHandler(EventBits_t Event)
 	switch (Event) {
 	case ETH_LINK_UP:
 		LedStart(LED_LINK, 200);
+		MqttClientStart();
 		break;
 	case ETH_LINK_DOWN:
 		LedStart(LED_LINK, 2000);
+		MqttClientStop();
 		break;
 	default:
 		break;

@@ -110,6 +110,7 @@ int MX_LWIP_Init(void)
 	attributes.priority = osPriorityBelowNormal;
 	osThreadId_t ret =
 		osThreadNew(ethernet_link_thread, &gnetif, &attributes);
+	osDelay(2);
 	/* USER CODE END H7_OS_THREAD_NEW_CMSIS_RTOS_V2 */
 	netif_set_link_up(&gnetif);
 	ethernet_link_status_updated(&gnetif);
@@ -136,6 +137,8 @@ int MX_LWIP_Init(void)
 static void ethernet_link_status_updated(struct netif *netif)
 {
 	if (netif_is_up(netif)) {
+		ipaddr = netif->ip_addr;
+		gw = netif->gw;
 		osEventFlagsSet(MainEvent, ETH_LINK_UP);
 	} else /* netif is down */
 	{
