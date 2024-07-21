@@ -11,7 +11,7 @@
 #include "FreeRTOS.h"
 #include "semphr.h"
 
-#define CUSTOM_PRINT_MAX_LEN_MSG 64
+#define CUSTOM_PRINT_MAX_LEN_MSG 128
 
 #ifndef DLOG_SET_DEFAULT_LEVEL
 #define DLOG_SET_DEFAULT_LEVEL 0x10

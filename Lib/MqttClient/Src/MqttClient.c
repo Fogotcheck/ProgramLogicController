@@ -1,6 +1,7 @@
 #include "MqttClient.h"
 
 TaskHandle_t MqttThrHandle = NULL;
+TimerHandle_t MqttTimerControl = NULL;
 EventGroupHandle_t MqttClientEvent = NULL;
 static mqtt_client_t *mqtt_client;
 static struct mqtt_connect_client_info_t mqtt_client_info = {
@@ -21,9 +22,11 @@ static struct mqtt_connect_client_info_t mqtt_client_info = {
 /* todo */
 extern ip4_addr_t ipaddr;
 static ip_addr_t mqtt_ip = { 0 };
+static char TopicPrefix[64] = { 0 };
+static uint8_t TimerControlState = MQTT_TIMER_CHECK_LINK;
 
 void MqttThread(void *arg);
-void MqttClienEventsHandler(EventBits_t Event);
+void MqttEventsHandler(EventBits_t Event);
 
 static void mqtt_incoming_publish_cb(void *arg, const char *topic,
 				     u32_t tot_len);
@@ -32,6 +35,8 @@ static void mqtt_incoming_data_cb(void *arg, const u8_t *data, u16_t len,
 static void mqtt_connection_cb(mqtt_client_t *client, void *arg,
 			       mqtt_connection_status_t status);
 static void mqtt_request_cb(void *arg, err_t err);
+
+void MqttTimerCb(TimerHandle_t xTimer);
 
 int MqttClientInit(void)
 {
@@ -48,7 +53,18 @@ void MqttThread(__attribute__((unused)) void *arg)
 	if (MqttClientEvent == NULL) {
 		ErrMessage();
 	}
+	MqttTimerControl = xTimerCreate("MqttTimer",
+					pdMS_TO_TICKS(MQTT_TIMER_TICK_MS),
+					pdTRUE, NULL, MqttTimerCb);
+	if (MqttTimerControl == NULL) {
+		ErrMessage();
+	}
+
+	/* todo: add find server */
 	ipaddr_aton("192.168.0.1", &mqtt_ip);
+	strcat(TopicPrefix, "plk/");
+	strcat(TopicPrefix, ipaddr_ntoa(&ipaddr));
+
 	mqtt_client = mqtt_client_new();
 	mqtt_set_inpub_callback(mqtt_client, mqtt_incoming_publish_cb,
 				mqtt_incoming_data_cb,
@@ -62,32 +78,46 @@ void MqttThread(__attribute__((unused)) void *arg)
 		Mask = 1;
 		for (uint8_t i = 0; i < configUSE_16_BIT_TICKS; i++) {
 			if (Event & Mask) {
-				MqttClienEventsHandler(Event & Mask);
+				MqttEventsHandler(Event & Mask);
 			}
 			Mask <<= 1;
 		}
 	}
 }
 
-void MqttClienEventsHandler(EventBits_t Event)
+void MqttEventsHandler(EventBits_t Event)
 {
 	xEventGroupClearBits(MqttClientEvent, Event);
 	InfoMessage("event::0x%x", Event);
-
+	static uint8_t SwitchTimerControl = 0;
 	switch (Event) {
-	case MQTT_CREATE_CLIENT:
-
-		mqtt_client_connect(mqtt_client, &mqtt_ip, MQTT_PORT,
-				    mqtt_connection_cb,
-				    LWIP_CONST_CAST(void *, &mqtt_client_info),
-				    &mqtt_client_info);
-
+	case MQTT_TRY_CONNECT:
+		if (SwitchTimerControl == 0) {
+			SwitchTimerControl = 1;
+			xTimerStart(MqttTimerControl, 0);
+		}
+		__attribute__((unused)) err_t ret = mqtt_client_connect(
+			mqtt_client, &mqtt_ip, MQTT_PORT, mqtt_connection_cb,
+			LWIP_CONST_CAST(void *, &mqtt_client_info),
+			&mqtt_client_info);
 		break;
-	case MQTT_FREE_CLIENT:
-
+	case MQTT_DISCONNECT:
+		if (SwitchTimerControl == 1) {
+			SwitchTimerControl = 0;
+			xTimerStop(MqttTimerControl, 0);
+		}
 		mqtt_disconnect(mqtt_client);
-
 		break;
+	case MQTT_LINK_CONNECT: {
+		char TopicName[128] = { 0 };
+		strcat(TopicName, TopicPrefix);
+		strcat(TopicName, "/conf");
+		mqtt_publish(mqtt_client, TopicName, "Wait config", 11, 0, 0,
+			     NULL, NULL);
+		mqtt_subscribe(mqtt_client, TopicName, 1, mqtt_request_cb,
+			       NULL);
+		break;
+	}
 	default:
 		break;
 	}
@@ -95,58 +125,82 @@ void MqttClienEventsHandler(EventBits_t Event)
 
 void MqttClientStart(void)
 {
-	xEventGroupSetBits(MqttClientEvent, MQTT_CREATE_CLIENT);
+	xEventGroupSetBits(MqttClientEvent, MQTT_TRY_CONNECT);
 }
 
 void MqttClientStop(void)
 {
-	xEventGroupSetBits(MqttClientEvent, MQTT_FREE_CLIENT);
+	xEventGroupSetBits(MqttClientEvent, MQTT_DISCONNECT);
 }
 
 static void mqtt_incoming_publish_cb(void *arg, const char *topic,
 				     u32_t tot_len)
 {
+	__attribute__((unused))
 	const struct mqtt_connect_client_info_t *client_info =
 		(const struct mqtt_connect_client_info_t *)arg;
 
-	LWIP_PLATFORM_DIAG(("MQTT client \"%s\" publish cb: topic %s, len %d\n",
-			    client_info->client_id, topic, (int)tot_len));
+	InfoMessage("%s\t%d", topic, (int)tot_len);
 }
 
 static void mqtt_incoming_data_cb(void *arg, const u8_t *data, u16_t len,
 				  u8_t flags)
 {
+	__attribute__((unused))
 	const struct mqtt_connect_client_info_t *client_info =
 		(const struct mqtt_connect_client_info_t *)arg;
 	LWIP_UNUSED_ARG(data);
 
-	LWIP_PLATFORM_DIAG(("MQTT client \"%s\" data cb: len %d, flags %d\n",
-			    client_info->client_id, (int)len, (int)flags));
+	InfoMessage("%d\t%d", (int)len, (int)flags);
 }
 
 static void mqtt_connection_cb(mqtt_client_t *client, void *arg,
 			       mqtt_connection_status_t status)
 {
+	__attribute__((unused))
 	const struct mqtt_connect_client_info_t *client_info =
 		(const struct mqtt_connect_client_info_t *)arg;
 	LWIP_UNUSED_ARG(client);
-
-	LWIP_PLATFORM_DIAG(("MQTT client \"%s\" connection cb: status %d\n",
-			    client_info->client_id, (int)status));
+	InfoMessage("status %d", (int)status);
 
 	if (status == MQTT_CONNECT_ACCEPTED) {
-		mqtt_sub_unsub(client, "topic_qos1", 1, mqtt_request_cb,
-			       LWIP_CONST_CAST(void *, client_info), 1);
-		mqtt_sub_unsub(client, "topic_qos0", 0, mqtt_request_cb,
-			       LWIP_CONST_CAST(void *, client_info), 1);
+		TimerControlState = 0;
+		xEventGroupSetBits(MqttClientEvent, MQTT_LINK_CONNECT);
+
+	} else {
+		TimerControlState = 1;
+
+		xEventGroupSetBits(MainEvent, MQTT_CRITICAL_ERR);
 	}
 }
 
-static void mqtt_request_cb(void *arg, err_t err)
+static void mqtt_request_cb(__attribute__((unused)) void *arg, err_t err)
 {
-	const struct mqtt_connect_client_info_t *client_info =
-		(const struct mqtt_connect_client_info_t *)arg;
+	InfoMessage("err %d", (int)err);
+	if (err != ERR_OK) {
+		xEventGroupSetBits(MqttClientEvent, MQTT_LINK_CONNECT);
+		return;
+	}
+	xEventGroupSetBits(MainEvent, MQTT_WAIT_CONF);
+}
 
-	LWIP_PLATFORM_DIAG(("MQTT client \"%s\" request cb: err %d\n",
-			    client_info->client_id, (int)err));
+void MqttTimerCb(TimerHandle_t xTimer)
+{
+	if (xTimer == MqttTimerControl) {
+		switch (TimerControlState) {
+		case MQTT_TIMER_CHECK_LINK:
+			if (mqtt_client_is_connected(mqtt_client)) {
+				return;
+			}
+			xEventGroupSetBits(MainEvent, MQTT_CRITICAL_ERR);
+			TimerControlState = MQTT_TIMER_REQUEST_CONNECT;
+			break;
+		case MQTT_TIMER_REQUEST_CONNECT:
+			mqtt_disconnect(mqtt_client);
+			xEventGroupSetBits(MqttClientEvent, MQTT_TRY_CONNECT);
+			break;
+		default:
+			break;
+		}
+	}
 }

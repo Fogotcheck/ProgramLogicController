@@ -4,6 +4,7 @@
 #include "FreeRTOS.h"
 #include "main.h"
 #include "task.h"
+#include "timers.h"
 #include "lwip.h"
 
 #include "MqttClientEvent.h"
@@ -15,6 +16,14 @@
 #define MQTT_MODULE_NAME "MqttTask"
 #define MQTT_THR_STACK 512
 #define MQTT_THR_PRIORITIES (configMAX_PRIORITIES - 3)
+#define MQTT_TIMER_TICK_MS 1000
+
+enum MqttTimerState
+{
+    MQTT_TIMER_CHECK_LINK,
+    MQTT_TIMER_REQUEST_CONNECT
+
+};
 
 int MqttClientInit(void);
 void MqttClientStart(void);

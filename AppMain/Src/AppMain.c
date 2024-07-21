@@ -75,6 +75,8 @@ void MainEventHandler(EventBits_t Event)
 {
 	xEventGroupClearBits(MainEvent, Event);
 	InfoMessage("event::0x%x", Event);
+	static MainEventErrUnion_t Err;
+
 	switch (Event) {
 	case ETH_LINK_UP:
 		LedStart(LED_LINK, 200);
@@ -84,7 +86,19 @@ void MainEventHandler(EventBits_t Event)
 		LedStart(LED_LINK, 2000);
 		MqttClientStop();
 		break;
+	case MQTT_WAIT_CONF:
+		Err.Bit.mqtt = 0;
+		LedStart(LED_LINK, 0);
+		break;
+	case MQTT_CRITICAL_ERR:
+		Err.Bit.mqtt = 1;
+		break;
 	default:
 		break;
+	}
+	if (Err.u32) {
+		LedStart(LED_ERR, 200);
+	} else {
+		LedStop(LED_ERR);
 	}
 }
