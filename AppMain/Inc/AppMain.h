@@ -12,5 +12,6 @@
 #include "DLog.h"
 #include "MainEvent.h"
 #include "MqttClient.h"
+#include "Configurator.h"
 
 #endif //__AppMain_h__

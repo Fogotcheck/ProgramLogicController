@@ -4,3 +4,6 @@
 [submodule "Lib/Lwip/lwip"]
 	path = Lib/Lwip/lwip
 	url = https://github.com/lwip-tcpip/lwip.git
+[submodule "Lib/LwJson"]
+	path = Lib/LwJson
+	url = https://github.com/MaJerle/lwjson.git

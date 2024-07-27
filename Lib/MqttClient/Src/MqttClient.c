@@ -1,8 +1,11 @@
 #include "MqttClient.h"
+#include "Configurator.h"
 
 TaskHandle_t MqttThrHandle = NULL;
 TimerHandle_t MqttTimerControl = NULL;
 EventGroupHandle_t MqttClientEvent = NULL;
+extern QueueHandle_t ConfiauratorQueue;
+
 static mqtt_client_t *mqtt_client;
 static struct mqtt_connect_client_info_t mqtt_client_info = {
 	"test",
@@ -149,8 +152,16 @@ static void mqtt_incoming_data_cb(void *arg, const u8_t *data, u16_t len,
 	__attribute__((unused))
 	const struct mqtt_connect_client_info_t *client_info =
 		(const struct mqtt_connect_client_info_t *)arg;
+	ConfiguratorBuf_t Buf = { 0 };
 	LWIP_UNUSED_ARG(data);
-
+	if (len > sizeof(Buf.data)) {
+		ErrMessage();
+		return;
+	}
+	Buf.len = (uint16_t)len;
+	Buf.flag = (uint8_t)flags;
+	memcpy(Buf.data, data, len);
+	xQueueSend(ConfiauratorQueue, &Buf, 0);
 	InfoMessage("%d\t%d", (int)len, (int)flags);
 }
 

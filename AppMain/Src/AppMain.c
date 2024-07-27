@@ -44,6 +44,10 @@ void MainThread(__attribute__((unused)) void *arg)
 		ErrMessage();
 	}
 
+	if (ConfiguratorInit()) {
+		ErrMessage();
+	}
+
 	InfoMessage("Init::OK");
 	vTaskDelay(1000);
 	/* start setiings */
