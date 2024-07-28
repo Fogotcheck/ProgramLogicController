@@ -10,6 +10,8 @@
 #include "main.h"
 #include "DLog.h"
 #include "ActuatMechTypes.h"
+#include "ActuatMechEvent.h"
+#include "Mech.h"
 
 #define CONF_MODULE_NAME "ConfTask"
 #define CONF_THR_STACK 1024

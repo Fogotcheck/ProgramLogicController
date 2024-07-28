@@ -161,7 +161,15 @@ static void mqtt_incoming_data_cb(void *arg, const u8_t *data, u16_t len,
 	Buf.len = (uint16_t)len;
 	Buf.flag = (uint8_t)flags;
 	memcpy(Buf.data, data, len);
-	xQueueSend(ConfiauratorQueue, &Buf, 0);
+	BaseType_t ret = xQueueSend(ConfiauratorQueue, &Buf, 0);
+	if (ret != pdTRUE) {
+		vTaskDelay(10);
+		ret = xQueueSend(ConfiauratorQueue, &Buf, 0);
+		if (ret != pdTRUE) {
+			ErrMessage();
+			return;
+		}
+	}
 	InfoMessage("%d\t%d", (int)len, (int)flags);
 }
 

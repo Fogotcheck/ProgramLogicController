@@ -16,6 +16,7 @@ target_link_libraries(
     ${PROJECT_NAME}StInterface
     FreeRtos
     MainEvents
+    ActuatMech
     ${PROJECT_NAME}Components
 )
 

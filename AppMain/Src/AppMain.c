@@ -48,8 +48,9 @@ void MainThread(__attribute__((unused)) void *arg)
 		ErrMessage();
 	}
 
-	InfoMessage("Init::OK");
 	vTaskDelay(1000);
+	InfoMessage("Init::OK");
+
 	/* start setiings */
 	for (uint8_t i = 0; i < LED_ERR; i++) {
 		if (LedStart(i, 1000 * (i + 1))) {

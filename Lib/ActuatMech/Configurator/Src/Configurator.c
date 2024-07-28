@@ -3,7 +3,7 @@
 TaskHandle_t ConfThrHandle = NULL;
 QueueHandle_t ConfiauratorQueue = NULL;
 static lwjson_stream_parser_t LwJsonStream;
-ConfigCh_t Config[6] = { 0 };
+ConfigCh_t Config[ACTUAT_MECH_COUNT] = { 0 };
 ConfigCh_t *CurCh = NULL;
 
 static void prv_callback_func(lwjson_stream_parser_t *jsp,
@@ -34,6 +34,10 @@ void ConfiguratorThread(__attribute__((unused)) void *arg)
 		ErrMessage();
 		Error_Handler();
 	}
+	if (MechInit()) {
+		ErrMessage();
+	}
+
 	InfoMessage("Init");
 
 	lwjson_stream_init(&LwJsonStream, prv_callback_func);
@@ -50,10 +54,20 @@ void ConfiguratorThread(__attribute__((unused)) void *arg)
 				InfoMessage("Waiting");
 				break;
 			case lwjsonSTREAMDONE:
+				for (uint8_t j = 0;
+				     j < sizeof(Config) / sizeof(Config[0]);
+				     j++) {
+					if (MechConfigInitStart(Config[j].ch,
+								&Config[j])) {
+						ErrMessage();
+					}
+				}
+				memset(Config, 0, sizeof(Config));
 				CurCh = NULL;
 				InfoMessage("Done");
 				break;
 			default:
+				memset(Config, 0, sizeof(Config));
 				CurCh = NULL;
 				ErrMessage();
 				break;
@@ -94,6 +108,7 @@ void ConfSetCh(uint32_t num, ConfigCh_t **ch)
 	if (num >= sizeof(Config) / sizeof(Config[0])) {
 		return;
 	}
+	Config[num].ch = num;
 	*ch = &Config[num];
 }
 
