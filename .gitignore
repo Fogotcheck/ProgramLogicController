@@ -3,6 +3,4 @@ build/**
 Lib/StCube/.cproject
 Lib/StCube/.mxproject
 Lib/StCube/.project
-mosquitto/mosquitto.conf
-mosquitto/passwd.txt
-mosquitto/mosquitto.pid
+mosquitto/**

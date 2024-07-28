@@ -36,20 +36,26 @@ void ConfiguratorThread(__attribute__((unused)) void *arg)
 	}
 	InfoMessage("Init");
 
-		lwjson_stream_init(&LwJsonStream, prv_callback_func);
+	lwjson_stream_init(&LwJsonStream, prv_callback_func);
 	lwjsonr_t res;
 	while (1) {
 		xQueueReceive(ConfiauratorQueue, &Buf, portMAX_DELAY);
 		for (uint16_t i = 0; i < Buf.len; i++) {
 			res = lwjson_stream_parse(&LwJsonStream, Buf.data[i]);
-			if (res == lwjsonSTREAMINPROG) {
-			} else if (res == lwjsonSTREAMWAITFIRSTCHAR) {
-				printf("Waiting first character\r\n");
-			} else if (res == lwjsonSTREAMDONE) {
+
+			switch (res) {
+			case lwjsonSTREAMINPROG:
+				break;
+			case lwjsonSTREAMWAITFIRSTCHAR:
+				InfoMessage("Waiting");
+				break;
+			case lwjsonSTREAMDONE:
 				CurCh = NULL;
-				printf("Done\r\n");
-			} else {
-				printf("Error\r\n");
+				InfoMessage("Done");
+				break;
+			default:
+				CurCh = NULL;
+				ErrMessage();
 				break;
 			}
 		}
