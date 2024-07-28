@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 set(ModuleName "ActuatMech")
-set(${ModuleName}Head 
+set(${ModuleName}Head
     Types
     Events
     Def
