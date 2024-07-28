@@ -98,6 +98,12 @@ void MainEventHandler(EventBits_t Event)
 	case MQTT_CRITICAL_ERR:
 		Err.Bit.mqtt = 1;
 		break;
+	case CONFIGURAT_ERR:
+		Err.Bit.conf = 1;
+		break;
+	case CONFIGURATE_DONE:
+		Err.Bit.conf = 0;
+		break;
 	default:
 		break;
 	}

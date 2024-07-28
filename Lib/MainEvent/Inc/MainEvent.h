@@ -11,13 +11,17 @@ enum MainEventsEnum {
 	ETH_LINK_DOWN = (EventBits_t)(1 << 1),
 	MQTT_WAIT_CONF = (EventBits_t)(1 << 2),
 	MQTT_CRITICAL_ERR = (EventBits_t)(1 << 3),
+	CONFIGURAT_ERR = (EventBits_t)(1 << 4),
+	CONFIGURATE_DONE = (EventBits_t)(1 << 5),
 
 	MAIN_ALL_EVENTS = (EventBits_t)(ETH_LINK_UP) | (ETH_LINK_DOWN) |
-			  (MQTT_WAIT_CONF) | (MQTT_CRITICAL_ERR)
+			  (MQTT_WAIT_CONF) | (MQTT_CRITICAL_ERR) |
+			  (CONFIGURAT_ERR) | (CONFIGURATE_DONE)
 };
 
 typedef struct MainEventErrBit {
 	uint8_t mqtt : 1;
+	uint8_t conf : 1;
 
 } MainEventErrBit_t;
 

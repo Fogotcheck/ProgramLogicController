@@ -9,6 +9,7 @@
 #include "lwjson/lwjson.h"
 #include "main.h"
 #include "DLog.h"
+#include "MainEvent.h"
 #include "ActuatMechTypes.h"
 #include "ActuatMechEvent.h"
 #include "Mech.h"

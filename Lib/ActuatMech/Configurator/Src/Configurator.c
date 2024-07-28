@@ -53,23 +53,36 @@ void ConfiguratorThread(__attribute__((unused)) void *arg)
 			case lwjsonSTREAMWAITFIRSTCHAR:
 				InfoMessage("Waiting");
 				break;
-			case lwjsonSTREAMDONE:
+			case lwjsonSTREAMDONE: {
+				uint8_t ret = 0;
+				
 				for (uint8_t j = 0;
 				     j < sizeof(Config) / sizeof(Config[0]);
 				     j++) {
 					if (MechConfigInitStart(Config[j].ch,
 								&Config[j])) {
 						ErrMessage();
+						xEventGroupSetBits(
+							MainEvent,
+							CONFIGURAT_ERR);
+						ret = 1;
 					}
 				}
+
 				memset(Config, 0, sizeof(Config));
 				CurCh = NULL;
+				if (ret) {
+					break;
+				}
+				xEventGroupSetBits(MainEvent, CONFIGURATE_DONE);
 				InfoMessage("Done");
 				break;
+			}
 			default:
 				memset(Config, 0, sizeof(Config));
 				CurCh = NULL;
 				ErrMessage();
+				xEventGroupSetBits(MainEvent, CONFIGURAT_ERR);
 				break;
 			}
 		}

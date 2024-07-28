@@ -167,6 +167,7 @@ static void mqtt_incoming_data_cb(void *arg, const u8_t *data, u16_t len,
 		ret = xQueueSend(ConfiauratorQueue, &Buf, 0);
 		if (ret != pdTRUE) {
 			ErrMessage();
+			xEventGroupSetBits(MainEvent, CONFIGURAT_ERR);
 			return;
 		}
 	}
