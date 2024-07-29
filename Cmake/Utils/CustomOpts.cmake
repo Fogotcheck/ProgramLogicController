@@ -3,14 +3,13 @@ cmake_minimum_required(VERSION 3.22)
 option(OPENOCD_ENABLE "Custom target openocd flash" OFF)
 option(ENVIRONMENT_VSCODE "Custom target make json for VSCode" OFF)
 
-
 if(OPENOCD_ENABLE)
     include(${CMAKE_SOURCE_DIR}/Cmake/Utils/CustomConfig/OpenOCD.cmake)
 endif()
+
 if(ENVIRONMENT_VSCODE)
     include(${CMAKE_SOURCE_DIR}/Cmake/Utils/CustomConfig/VsCode.cmake)
 endif()
-
 
 find_program(ELF2DFUSE elf2dfuse)
 
@@ -49,9 +48,8 @@ endfunction(target_post_build TargetName)
 
 function(target_install_binary TargetName)
     add_custom_target(Install${TargetName}
-        COMMAND ${CMAKE_COMMAND} --install ${CMAKE_BINARY_DIR} --prefix ${CMAKE_BINARY_DIR}
-        DEPENDS ${AllTargets}
-        COMMENT "Installing ${TargetName}"
+        COMMAND CPack -G ZIP
+        DEPENDS ${PROJECT_NAME}
+        COMMENT "Installing ${PROJECT_NAME}"
     )
 endfunction(target_install_binary TargetName)
-
