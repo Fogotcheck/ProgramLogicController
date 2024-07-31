@@ -36,6 +36,12 @@ void MainThread(__attribute__((unused)) void *arg)
 		ErrMessage();
 		Error_Handler();
 	}
+
+	if (DriversInit()) {
+		ErrMessage();
+		Error_Handler();
+	}
+
 	if (MX_LWIP_Init()) {
 		ErrMessage();
 		Error_Handler();

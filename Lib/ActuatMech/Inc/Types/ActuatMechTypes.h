@@ -11,7 +11,7 @@
 #include "ActuatMechDef.h"
 
 #define ACTUAT_MECH_TYPE_NAME_SIZE 10
-#define ACTUAT_MECH_TYPE_PARAM_SIZE 10
+#define ACTUAT_MECH_TYPE_PARAM_SIZE 32
 
 typedef struct ConfInterface {
 	char type[ACTUAT_MECH_TYPE_NAME_SIZE];
