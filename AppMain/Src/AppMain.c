@@ -37,7 +37,7 @@ void MainThread(__attribute__((unused)) void *arg)
 		Error_Handler();
 	}
 
-	if (DriversInit()) {
+	if (DrivCompInit()) {
 		ErrMessage();
 		Error_Handler();
 	}

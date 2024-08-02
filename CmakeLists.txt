@@ -7,6 +7,10 @@ include(Cmake/Utils/ComponentsOpts.cmake)
 
 add_executable(${PROJECT_NAME})
 
+add_compile_definitions(
+    configRECORD_STACK_HIGH_ADDRESS=1
+)
+
 add_subdirectory(AppMain)
 add_subdirectory(Lib)
 

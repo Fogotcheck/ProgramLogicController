@@ -11,6 +11,21 @@
 #define SPI_INTERFACE_DEF_PARAM_0 "spi0"
 #define SPI_INTERFACE_DEF_PARAM_1 "spi1"
 
+enum SPI_PARAM_DEF {
+	INSTANCE,
+	MODE,
+	DIRECTION,
+	DATASIZE,
+	CLKPOLARITY,
+	CLKPHASE,
+	NSS,
+	BAUDRATEPRESCALER,
+	FIRSTBIT,
+	TIMODE,
+	CRCCALCULATION,
+	CRCPOLYNOMIAL,
+};
+
 int SpiInterfaceGetSupport(InterfaceTypes_t *AllInterface,
 			   uint16_t MaxInterfaceSize);
 

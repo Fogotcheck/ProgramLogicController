@@ -3,32 +3,30 @@
 
 #include "main.h"
 #include "ActuatMechTypes.h"
+#include "FreeRTOS.h"
+#include "event_groups.h"
 
-typedef int(InitFunc_t)(void *, uint32_t *);
-typedef int(DeInitFunc_t)(void *);
-typedef int(SetDefault_t)(char *, uint32_t *);
+typedef int(InitFaceFunc_t)(void *, uint32_t *);
+typedef int(DeInitFaceFunc_t)(void *);
+typedef int(SetFaceDefault_t)(char *, uint32_t *);
 
 typedef struct InterfaceTypes {
 	char type[ACTUAT_MECH_TYPE_NAME_SIZE];
 	void *Handle;
-	InitFunc_t *Init;
-	DeInitFunc_t *DeInit;
-	SetDefault_t *SetDefault;
+	InitFaceFunc_t *Init;
+	DeInitFaceFunc_t *DeInit;
+	SetFaceDefault_t *SetDefault;
 } InterfaceTypes_t;
 
-enum SPI_PARAM_DEF {
-	INSTANCE,
-	MODE,
-	DIRECTION,
-	DATASIZE,
-	CLKPOLARITY,
-	CLKPHASE,
-	NSS,
-	BAUDRATEPRESCALER,
-	FIRSTBIT,
-	TIMODE,
-	CRCCALCULATION,
-	CRCPOLYNOMIAL,
-};
+typedef int(InitDriverFunc_t)(InterfaceTypes_t *, uint32_t *);
+typedef void(RequestDriverFunc_t)(InterfaceTypes_t *, uint32_t *, uint32_t *);
+typedef void(CallBackFunc_t)(EventGroupHandle_t, EventBits_t);
+
+typedef struct DriverTypes {
+	char type[ACTUAT_MECH_TYPE_NAME_SIZE];
+	char InterfaceSupport[ACTUAT_MECH_TYPE_NAME_SIZE];
+	InitDriverFunc_t *Init;
+	RequestDriverFunc_t *Request;
+} DriverTypes_t;
 
 #endif //__DrivCompTypes_h__

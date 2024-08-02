@@ -20,5 +20,6 @@ target_link_libraries(
 )
 
 add_subdirectory(StInterface)
+add_subdirectory(Drivers)
 
 target_add_components(${ModuleName} ${ModuleName}Head)
