@@ -83,12 +83,16 @@ static inline int Lis3dhSpiInit(InterfaceTypes_t *Interface,
 	if (hspi == NULL) {
 		return -1;
 	}
-	HAL_StatusTypeDef ret =
-		HAL_SPI_TransmitReceive(hspi, &TXbuf, &RXbuf, sizeof(TXbuf), 1);
+
+	HAL_StatusTypeDef ret = HAL_SPI_Transmit(hspi, &TXbuf, 1, 10);
 	if (ret) {
 		return -1;
 	}
 
+	ret = HAL_SPI_Receive(hspi, &RXbuf, 1, 10);
+	if (ret) {
+		return -1;
+	}
 	if (RXbuf != LIS3DH_VAL_WHO_AM_I) {
 		return -1;
 	}

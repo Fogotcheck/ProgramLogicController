@@ -30,12 +30,12 @@ void MechThreads(void *arg)
 	Mech.ThrNum = (uint32_t)arg;
 	MechHandlers[Mech.ThrNum].EventHandle = xEventGroupCreate();
 	if (MechHandlers[Mech.ThrNum].EventHandle == NULL) {
-		ErrMessage("0x%x",Mech.ThrNum);
+		ErrMessage("0x%x", Mech.ThrNum);
 	}
 	MechHandlers[Mech.ThrNum].QueueHandle =
 		xQueueCreate(1, sizeof(MechHandlers[Mech.ThrNum].ChHandle));
 	if (MechHandlers[Mech.ThrNum].QueueHandle == NULL) {
-		ErrMessage("[%d]",Mech.ThrNum);
+		ErrMessage("[%d]", Mech.ThrNum);
 	}
 
 	InfoMessage("Init[%d]", Mech.ThrNum);
@@ -63,7 +63,7 @@ void MechEventHandler(EventBits_t Event, MechPrivateHandleType_t *Mech)
 	switch (Event) {
 	case MECH_INIT: {
 		if (MechInitEventHandler(Mech)) {
-			ErrMessage("[%d]",Mech->ThrNum);
+			ErrMessage("[%d]", Mech->ThrNum);
 		}
 		break;
 	}
@@ -84,14 +84,14 @@ int MechInitEventHandler(MechPrivateHandleType_t *Mech)
 	DrivCompGetDriver(&Mech->Driver,
 			  MechHandlers[Mech->ThrNum].ChHandle.Driver.type);
 	if ((Mech->Driver == NULL) || (Mech->Interface == NULL)) {
-		ErrMessage("[%d]",Mech->ThrNum);
+		ErrMessage("[%d]", Mech->ThrNum);
 		return -1;
 	}
 	state = Mech->Interface->SetDefault(
 		MechHandlers[Mech->ThrNum].ChHandle.Interface.type,
 		MechHandlers[Mech->ThrNum].ChHandle.Interface.param);
 	if (state) {
-		ErrMessage("[%d]",Mech->ThrNum);
+		ErrMessage("[%d]", Mech->ThrNum);
 		return -1;
 	}
 
@@ -99,14 +99,14 @@ int MechInitEventHandler(MechPrivateHandleType_t *Mech)
 		Mech->Interface->Handle,
 		MechHandlers[Mech->ThrNum].ChHandle.Interface.param);
 	if (state) {
-		ErrMessage("[%d]",Mech->ThrNum);
+		ErrMessage("[%d]", Mech->ThrNum);
 		return -1;
 	}
 	state = Mech->Driver->Init(
 		Mech->Interface,
 		MechHandlers[Mech->ThrNum].ChHandle.Driver.param);
 	if (state) {
-		ErrMessage("[%d]",Mech->ThrNum);
+		ErrMessage("[%d]", Mech->ThrNum);
 		return -1;
 	}
 
