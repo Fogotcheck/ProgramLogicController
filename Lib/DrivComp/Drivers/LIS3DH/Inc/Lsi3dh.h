@@ -99,6 +99,39 @@ enum Lis3dh_Register_Mapping_Value {
 	LIS3DH_VAL_ACT_DUR = 0b00000000,
 };
 
+enum Lis3dh_Param_Offset {
+	LIS3DH_TYPE=24,
+	LIS3DH_ADDR=16,
+	LIS3DH_DATA=0,
+};
+
+typedef struct Lsi3dhParamType
+{
+	uint16_t data;
+	uint8_t addr;
+	uint8_t type;
+}Lsi3dhParamType_t;
+
+
+enum Lis3dh_Param_Type{
+	LIS3DH_INIT_PARAM=0xa,
+	LIS3DH_WRITE_PARAM=0xb,
+	LIS3DH_REQUEST_PARAM=0xc,
+};
+
+enum Lis3dh_Default_Param {
+	LIS3DH_DEF_SYSTEM_INIT_0,
+	LIS3DH_DEF_SYSTEM_INIT_1,
+
+	LIS3DH_DEF_REQUEST_0,
+	LIS3DH_DEF_REQUEST_1,
+	LIS3DH_DEF_REQUEST_2,
+	LIS3DH_DEF_REQUEST_3,
+	LIS3DH_DEF_REQUEST_4,
+	LIS3DH_DEF_REQUEST_5,
+	LIS3DH_DEF_REQUEST_6,
+};
+
 int Lis3dhDriverGetSupport(DriverTypes_t *AllDrivers, uint16_t MaxDrivers);
 
 #endif //__Lsi3dh_h__

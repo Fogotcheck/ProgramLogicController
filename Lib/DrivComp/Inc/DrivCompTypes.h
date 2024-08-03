@@ -10,6 +10,7 @@ typedef int(InitFaceFunc_t)(void *, uint32_t *);
 typedef int(DeInitFaceFunc_t)(void *);
 typedef int(SetFaceDefault_t)(char *, uint32_t *);
 
+
 typedef struct InterfaceTypes {
 	char type[ACTUAT_MECH_TYPE_NAME_SIZE];
 	void *Handle;
@@ -21,11 +22,13 @@ typedef struct InterfaceTypes {
 typedef int(InitDriverFunc_t)(InterfaceTypes_t *, uint32_t *);
 typedef void(RequestDriverFunc_t)(InterfaceTypes_t *, uint32_t *, uint32_t *);
 typedef void(CallBackFunc_t)(EventGroupHandle_t, EventBits_t);
+typedef int(SetDriverDefault_t)(InterfaceTypes_t *, uint32_t *);
 
 typedef struct DriverTypes {
 	char type[ACTUAT_MECH_TYPE_NAME_SIZE];
 	char InterfaceSupport[ACTUAT_MECH_TYPE_NAME_SIZE];
 	InitDriverFunc_t *Init;
+	SetDriverDefault_t *SetDefault;
 	RequestDriverFunc_t *Request;
 } DriverTypes_t;
 
