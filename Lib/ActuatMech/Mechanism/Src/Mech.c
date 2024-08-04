@@ -8,7 +8,7 @@ uint32_t MechCheckConfig(ConfigCh_t *Config);
 
 static inline int MechInterfaceInit(MechPrivateHandleType_t *Mech);
 static inline int MechDriverInit(MechPrivateHandleType_t *Mech);
-
+void MechDeinit(MechPrivateHandleType_t *Mech);
 int MechInitEventHandler(MechPrivateHandleType_t *Mech);
 
 int MechInit(void)
@@ -65,6 +65,7 @@ void MechEventHandler(EventBits_t Event, MechPrivateHandleType_t *Mech)
 	InfoMessage("event[%d]::0x%x", Mech->ThrNum, Event);
 	switch (Event) {
 	case MECH_INIT: {
+		MechDeinit(Mech);
 		if (MechInitEventHandler(Mech)) {
 			ErrMessage("[%d]", Mech->ThrNum);
 		}
@@ -74,6 +75,12 @@ void MechEventHandler(EventBits_t Event, MechPrivateHandleType_t *Mech)
 	default:
 		break;
 	}
+}
+
+void MechDeinit(MechPrivateHandleType_t *Mech)
+{
+	Mech->Driver = NULL;
+	Mech->Interface = NULL;
 }
 
 int MechInitEventHandler(MechPrivateHandleType_t *Mech)

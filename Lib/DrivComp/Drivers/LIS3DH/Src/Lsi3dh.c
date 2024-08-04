@@ -8,6 +8,10 @@ static void Lis3dhSetInterfaceType(InterfaceTypes_t *Interface,
 static inline int Lis3dhSpiInit(InterfaceTypes_t *Interface, uint32_t *Param);
 static int Lis3dhSetDefaultParam(InterfaceTypes_t *Interface, uint32_t *Param);
 static inline void Lis3dhSpiSetDefault(uint32_t *Param);
+static int Lis3dhRequest(InterfaceTypes_t *Interface, uint32_t *Param,
+			 uint32_t *RxBuf);
+static inline int Lis3dhSpiRequest(InterfaceTypes_t *Interface, uint32_t *Param,
+				   uint32_t *RxBuf);
 
 int Lis3dhDriverGetSupport(DriverTypes_t *AllDrivers, uint16_t MaxDrivers)
 {
@@ -30,6 +34,7 @@ int Lis3dhDriverGetSupport(DriverTypes_t *AllDrivers, uint16_t MaxDrivers)
 
 	Driver->Init = Lis3dhInit;
 	Driver->SetDefault = Lis3dhSetDefaultParam;
+	Driver->Request = Lis3dhRequest;
 	return 0;
 }
 
@@ -98,23 +103,23 @@ static inline int Lis3dhSpiInit(InterfaceTypes_t *Interface, uint32_t *Param)
 	if (RXbuf != LIS3DH_VAL_WHO_AM_I) {
 		return -1;
 	}
-	Lsi3dhParamType_t *RegParam = (Lsi3dhParamType_t *)Param;
-	do {
-		if (RegParam->type != LIS3DH_INIT_PARAM) {
-			break;
+
+	for (uint8_t i = 0; i < ACTUAT_MECH_TYPE_PARAM_SIZE; i++) {
+		Lsi3dhParamType_t *RegParam = (Lsi3dhParamType_t *)&Param[i];
+		if (RegParam->type == LIS3DH_INIT_PARAM) {
+			RegParam->addr |= WRITE;
+			ret = HAL_SPI_Transmit(hspi, &RegParam->addr, 1, 10);
+			if (ret) {
+				return -1;
+			}
+			ret = HAL_SPI_Transmit(hspi, (uint8_t *)&RegParam->data,
+					       1, 10);
+			if (ret) {
+				return -1;
+			}
+			HAL_Delay(2);
 		}
-		RegParam->addr |= WRITE;
-		ret = HAL_SPI_Transmit(hspi, &RegParam->addr, 1, 10);
-		if (ret) {
-			return -1;
-		}
-		ret = HAL_SPI_Transmit(hspi, (uint8_t *)&RegParam->data, 1, 10);
-		if (ret) {
-			return -1;
-		}
-		HAL_Delay(2);
-		RegParam++;
-	} while (1);
+	}
 
 	ret = HAL_SPI_Transmit(hspi, &TXbuf, 1, 10);
 	if (ret) {
@@ -184,4 +189,55 @@ static inline void Lis3dhSpiSetDefault(uint32_t *Param)
 	Param[LIS3DH_DEF_REQUEST_6] =
 		(LIS3DH_REQUEST_PARAM << LIS3DH_TYPE) |
 		(LIS3DH_ADD_OUT_ADC3_L << LIS3DH_ADDR); // request adc1 (zl)
+}
+
+static int Lis3dhRequest(InterfaceTypes_t *Interface, uint32_t *Param,
+			 uint32_t *RxBuf)
+{
+	uint8_t InterfaceType = LIS3DH_NULL_TYPE;
+	Lis3dhSetInterfaceType(Interface, &InterfaceType);
+
+	switch (InterfaceType) {
+	case LIS3DH_SPI_TYPE:
+		if (Lis3dhSpiRequest(Interface, Param, RxBuf))
+			return -1;
+		break;
+	case LIS3DH_I2C_TYPE:
+		break;
+	default:
+		return -1;
+	}
+	return 0;
+}
+
+static inline int Lis3dhSpiRequest(InterfaceTypes_t *Interface,
+				   __attribute__((unused)) uint32_t *Param,
+				   __attribute__((unused)) uint32_t *RxBuf)
+{
+	int ret = 0;
+	SPI_HandleTypeDef *hspi = (SPI_HandleTypeDef *)Interface->Handle;
+	if (hspi == NULL) {
+		return -1;
+	}
+
+	for (uint8_t i = 0; i < ACTUAT_MECH_TYPE_PARAM_SIZE; i++) {
+		Lsi3dhParamType_t *RegParam = (Lsi3dhParamType_t *)&Param[i];
+		if (RegParam->type == LIS3DH_REQUEST_PARAM) {
+			RegParam->addr |= READ;
+			ret = HAL_SPI_Transmit(hspi, &RegParam->addr, 1, 10);
+			if (ret) {
+				return -1;
+			}
+
+			ret = HAL_SPI_Receive(hspi, (uint8_t *)&RxBuf[i], 1,
+					      10);
+			if (ret) {
+				return -1;
+			}
+
+			RegParam->addr &= READ;
+		}
+	}
+
+	return 0;
 }
