@@ -6,10 +6,12 @@ void MechThreads(void *arg);
 void MechEventHandler(EventBits_t Event, MechPrivateHandleType_t *MechHandle);
 uint32_t MechCheckConfig(ConfigCh_t *Config);
 void MechSetBuf(MechPrivateBuf_t *Mem, MechPrivateBuf_t **Buf);
-static inline int MechInterfaceInit(MechPrivateHandleType_t *Mech);
-static inline int MechDriverInit(MechPrivateHandleType_t *Mech);
+int MechInterfaceInit(MechPrivateHandleType_t *Mech);
+int MechDriverInit(MechPrivateHandleType_t *Mech);
 void MechDeinit(MechPrivateHandleType_t *Mech);
 int MechInitEventHandler(MechPrivateHandleType_t *Mech);
+
+int MechStartEventHandler(MechPrivateHandleType_t *Mech);
 
 int MechInit(void)
 {
@@ -73,9 +75,34 @@ void MechEventHandler(EventBits_t Event, MechPrivateHandleType_t *Mech)
 		}
 		break;
 	}
+	case MECH_START: {
+		if (MechStartEventHandler(Mech)) {
+			ErrMessage("[%d]", Mech->ThrNum);
+		}
+		break;
+	}
 	default:
 		break;
 	}
+}
+
+int MechStartEventHandler(MechPrivateHandleType_t *Mech)
+{
+	int state = 0;
+	if (Mech->Driver->Request == NULL) {
+		ErrMessage("[%d]", Mech->ThrNum);
+		return -1;
+	}
+	state = Mech->Driver->Request(
+		Mech->Interface,
+		MechHandlers[Mech->ThrNum].ChHandle.Driver.param,
+		Mech->Buf->Raw);
+	if (state) {
+		ErrMessage("[%d]", Mech->ThrNum);
+		return -1;
+	}
+
+	return 0;
 }
 
 void MechDeinit(MechPrivateHandleType_t *Mech)
@@ -151,7 +178,7 @@ uint32_t MechCheckConfig(ConfigCh_t *Config)
 	return ret;
 }
 
-static inline int MechInterfaceInit(MechPrivateHandleType_t *Mech)
+inline int MechInterfaceInit(MechPrivateHandleType_t *Mech)
 {
 	int state = 0;
 	if (MechHandlers[Mech->ThrNum].ChHandle.Interface.param[0] == 0) {
@@ -182,7 +209,7 @@ static inline int MechInterfaceInit(MechPrivateHandleType_t *Mech)
 	return 0;
 }
 
-static inline int MechDriverInit(MechPrivateHandleType_t *Mech)
+inline int MechDriverInit(MechPrivateHandleType_t *Mech)
 {
 	int state = 0;
 	if (MechHandlers[Mech->ThrNum].ChHandle.Driver.param[0] == 0) {
