@@ -5,7 +5,7 @@ ActuatMech_t MechHandlers[ACTUAT_MECH_COUNT] = { 0 };
 void MechThreads(void *arg);
 void MechEventHandler(EventBits_t Event, MechPrivateHandleType_t *MechHandle);
 uint32_t MechCheckConfig(ConfigCh_t *Config);
-
+void MechSetBuf(MechPrivateBuf_t *Mem, MechPrivateBuf_t **Buf);
 static inline int MechInterfaceInit(MechPrivateHandleType_t *Mech);
 static inline int MechDriverInit(MechPrivateHandleType_t *Mech);
 void MechDeinit(MechPrivateHandleType_t *Mech);
@@ -41,6 +41,8 @@ void MechThreads(void *arg)
 		ErrMessage("[%d]", Mech.ThrNum);
 	}
 
+	MechPrivateBuf_t Buf;
+	MechSetBuf(&Buf, &Mech.Buf);
 	InfoMessage("Init[%d]", Mech.ThrNum);
 
 	EventBits_t Event = 0;
@@ -71,7 +73,6 @@ void MechEventHandler(EventBits_t Event, MechPrivateHandleType_t *Mech)
 		}
 		break;
 	}
-
 	default:
 		break;
 	}
@@ -98,9 +99,11 @@ int MechInitEventHandler(MechPrivateHandleType_t *Mech)
 	}
 
 	if (MechInterfaceInit(Mech)) {
+		ErrMessage("[%d]", Mech->ThrNum);
 		return -1;
 	}
 	if (MechDriverInit(Mech)) {
+		ErrMessage("[%d]", Mech->ThrNum);
 		return -1;
 	}
 
@@ -127,6 +130,7 @@ int MechConfigInitStart(uint32_t Ch, ConfigCh_t *Config)
 
 	if ((MechHandlers[Ch].QueueHandle == NULL) ||
 	    (MechHandlers[Ch].EventHandle == NULL)) {
+		ErrMessage("[%d]", Ch);
 		return -1;
 	}
 
@@ -206,4 +210,9 @@ static inline int MechDriverInit(MechPrivateHandleType_t *Mech)
 		return -1;
 	}
 	return 0;
+}
+
+void MechSetBuf(MechPrivateBuf_t *Mem, MechPrivateBuf_t **Buf)
+{
+	*Buf = Mem;
 }

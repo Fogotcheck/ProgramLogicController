@@ -15,7 +15,7 @@
 #include "Mech.h"
 
 #define CONF_MODULE_NAME "ConfTask"
-#define CONF_THR_STACK 1024
+#define CONF_THR_STACK 512
 #define CONF_THR_PRIORITIES (configMAX_PRIORITIES - 10)
 
 typedef struct ConfiguratorBuf
