@@ -10,9 +10,6 @@
 
 #include "ActuatMechDef.h"
 
-#define ACTUAT_MECH_TYPE_NAME_SIZE 10
-#define ACTUAT_MECH_TYPE_PARAM_SIZE 32
-
 typedef struct ConfInterface {
 	char type[ACTUAT_MECH_TYPE_NAME_SIZE];
 	uint32_t param[ACTUAT_MECH_TYPE_PARAM_SIZE];
@@ -44,5 +41,10 @@ typedef struct ActuatMech {
 	SemaphoreHandle_t SemphHandle;
 	ConfigCh_t ChHandle;
 } ActuatMech_t;
+
+typedef struct ActuatMechReport {
+	char Suffix[ACTUAT_MECH_SUFFIX_SIZE];
+	char Data[ACTUAT_MECH_DATA_SIZE];
+} ActuatMechReport_t;
 
 #endif //__ActuatMechTypes_h__

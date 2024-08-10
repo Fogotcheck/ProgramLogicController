@@ -82,7 +82,8 @@ static void Lis3dhSetInterfaceType(InterfaceTypes_t *Interface,
 	}
 }
 
-static inline int Lis3dhSpiInit(InterfaceTypes_t *Interface, uint32_t *Param)
+static inline int Lis3dhSpiInit(InterfaceTypes_t *Interface,
+				__attribute__((unused)) uint32_t *Param)
 {
 	uint8_t TXbuf = READ | LIS3DH_ADD_WHO_AM_I;
 	uint8_t RXbuf = 0;
@@ -90,7 +91,8 @@ static inline int Lis3dhSpiInit(InterfaceTypes_t *Interface, uint32_t *Param)
 	if (hspi == NULL) {
 		return -1;
 	}
-
+	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, 1);
+	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, 0);
 	HAL_StatusTypeDef ret = HAL_SPI_Transmit(hspi, &TXbuf, 1, 10);
 	if (ret) {
 		return -1;
@@ -100,33 +102,70 @@ static inline int Lis3dhSpiInit(InterfaceTypes_t *Interface, uint32_t *Param)
 	if (ret) {
 		return -1;
 	}
+	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, 1);
 	if (RXbuf != LIS3DH_VAL_WHO_AM_I) {
 		return -1;
 	}
+	uint8_t buf[2];
+
+	// Turn normal mode and 1.344kHz data rate on
+	buf[0] = LIS3DH_ADD_CTRL_REG1;
+	buf[1] = 0x97;
+	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, 0);
+	ret = HAL_SPI_Transmit(hspi, buf, 2, 10);
+	if (ret) {
+		return -1;
+	}
+	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, 1);
+	HAL_Delay(5);
+	// Turn block data update on (for temperature sensing)
+	buf[0] = LIS3DH_ADD_CTRL_REG4;
+	buf[1] = 0x80;
+	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, 0);
+	ret = HAL_SPI_Transmit(hspi, buf, 2, 10);
+	if (ret) {
+		return -1;
+	}
+	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, 1);
+	HAL_Delay(5);
+
+	// Turn auxiliary ADC on
+	buf[0] = LIS3DH_ADD_TEMP_CFG_REG;
+	buf[1] = 0xC0;
+	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, 0);
+	ret = HAL_SPI_Transmit(hspi, buf, 2, 10);
+	if (ret) {
+		return -1;
+	}
+	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, 1);
+	HAL_Delay(5);
 
 	for (uint8_t i = 0; i < ACTUAT_MECH_TYPE_PARAM_SIZE; i++) {
 		Lsi3dhParamType_t *RegParam = (Lsi3dhParamType_t *)&Param[i];
 		if (RegParam->type == LIS3DH_INIT_PARAM) {
 			RegParam->addr |= WRITE;
+			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 0);
 			ret = HAL_SPI_Transmit(hspi, &RegParam->addr, 1, 10);
 			if (ret) {
 				return -1;
 			}
 			ret = HAL_SPI_Transmit(hspi, (uint8_t *)&RegParam->data,
 					       1, 10);
+			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 1);
 			if (ret) {
 				return -1;
 			}
 			HAL_Delay(2);
 		}
 	}
-
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 0);
 	ret = HAL_SPI_Transmit(hspi, &TXbuf, 1, 10);
 	if (ret) {
 		return -1;
 	}
 	RXbuf = 0;
 	ret = HAL_SPI_Receive(hspi, &RXbuf, 1, 10);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 1);
 	if (ret) {
 		return -1;
 	}
@@ -171,24 +210,24 @@ static inline void Lis3dhSpiSetDefault(uint32_t *Param)
 
 	Param[LIS3DH_DEF_REQUEST_1] =
 		(LIS3DH_REQUEST_PARAM << LIS3DH_TYPE) |
-		(LIS3DH_ADD_OUT_ADC1_H << LIS3DH_ADDR); // request adc1 (xh)
+		(LIS3DH_ADD_OUT_X_H << LIS3DH_ADDR); // request adc1 (xh)
 	Param[LIS3DH_DEF_REQUEST_2] =
 		(LIS3DH_REQUEST_PARAM << LIS3DH_TYPE) |
-		(LIS3DH_ADD_OUT_ADC1_L << LIS3DH_ADDR); // request adc1 (xl)
+		(LIS3DH_ADD_OUT_X_L << LIS3DH_ADDR); // request adc1 (xl)
 
 	Param[LIS3DH_DEF_REQUEST_3] =
 		(LIS3DH_REQUEST_PARAM << LIS3DH_TYPE) |
-		(LIS3DH_ADD_OUT_ADC2_H << LIS3DH_ADDR); // request adc1 (yh)
+		(LIS3DH_ADD_OUT_Y_H << LIS3DH_ADDR); // request adc1 (yh)
 	Param[LIS3DH_DEF_REQUEST_4] =
 		(LIS3DH_REQUEST_PARAM << LIS3DH_TYPE) |
-		(LIS3DH_ADD_OUT_ADC2_L << LIS3DH_ADDR); // request adc1 (yl)
+		(LIS3DH_ADD_OUT_Y_L << LIS3DH_ADDR); // request adc1 (yl)
 
 	Param[LIS3DH_DEF_REQUEST_5] =
 		(LIS3DH_REQUEST_PARAM << LIS3DH_TYPE) |
-		(LIS3DH_ADD_OUT_ADC3_H << LIS3DH_ADDR); // request adc1 (zh)
+		(LIS3DH_ADD_OUT_Z_H << LIS3DH_ADDR); // request adc1 (zh)
 	Param[LIS3DH_DEF_REQUEST_6] =
 		(LIS3DH_REQUEST_PARAM << LIS3DH_TYPE) |
-		(LIS3DH_ADD_OUT_ADC3_L << LIS3DH_ADDR); // request adc1 (zl)
+		(LIS3DH_ADD_OUT_Z_L << LIS3DH_ADDR); // request adc1 (zl)
 }
 
 static int Lis3dhRequest(InterfaceTypes_t *Interface, uint32_t *Param,
@@ -220,22 +259,25 @@ static inline int Lis3dhSpiRequest(InterfaceTypes_t *Interface,
 		return -1;
 	}
 
+	uint8_t TmpBuf[ACTUAT_MECH_TYPE_PARAM_SIZE] = { 0 };
 	for (uint8_t i = 0; i < ACTUAT_MECH_TYPE_PARAM_SIZE; i++) {
 		Lsi3dhParamType_t *RegParam = (Lsi3dhParamType_t *)&Param[i];
 		if (RegParam->type == LIS3DH_REQUEST_PARAM) {
 			RegParam->addr |= READ;
-			ret = HAL_SPI_Transmit(hspi, &RegParam->addr, 1, 10);
+			uint8_t addr = RegParam->addr;
+			HAL_Delay(5);
+			HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, 0);
+			ret = HAL_SPI_Transmit(hspi, (uint8_t *)&addr, 1, 10);
 			if (ret) {
 				return -1;
 			}
 
-			ret = HAL_SPI_Receive(hspi, (uint8_t *)&RxBuf[i], 1,
+			ret = HAL_SPI_Receive(hspi, (uint8_t *)&TmpBuf[i], 1,
 					      10);
+			HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, 1);
 			if (ret) {
 				return -1;
 			}
-
-			RegParam->addr &= READ;
 		}
 	}
 

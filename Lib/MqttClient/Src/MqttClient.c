@@ -5,6 +5,7 @@ TaskHandle_t MqttThrHandle = NULL;
 TimerHandle_t MqttTimerControl = NULL;
 EventGroupHandle_t MqttClientEvent = NULL;
 extern QueueHandle_t ConfiauratorQueue;
+QueueHandle_t ReportQueue = NULL;
 
 static mqtt_client_t *mqtt_client;
 static struct mqtt_connect_client_info_t mqtt_client_info = {
@@ -62,6 +63,11 @@ void MqttThread(__attribute__((unused)) void *arg)
 	if (MqttTimerControl == NULL) {
 		ErrMessage();
 	}
+	ReportQueue = xQueueCreate(MQTT_REPORT_QUEUE_SIZE,
+				   sizeof(ActuatMechReport_t));
+	if (ReportQueue == NULL) {
+		ErrMessage();
+	}
 
 	/* todo: add find server */
 	ipaddr_aton("192.168.0.1", &mqtt_ip);
@@ -112,7 +118,7 @@ void MqttEventsHandler(EventBits_t Event)
 		mqtt_disconnect(mqtt_client);
 		break;
 	case MQTT_LINK_CONNECT: {
-		char TopicName[128] = { 0 };
+		char TopicName[MQTT_VAR_HEADER_BUFFER_LEN] = { 0 };
 		strcat(TopicName, TopicPrefix);
 		strcat(TopicName, "/conf");
 		mqtt_publish(mqtt_client, TopicName, "Wait config", 11, 0, 0,
@@ -121,6 +127,19 @@ void MqttEventsHandler(EventBits_t Event)
 			       NULL);
 		break;
 	}
+	case MQTT_SEND_REPORT: {
+		ActuatMechReport_t Report;
+		while ((xQueueReceive(ReportQueue, &Report, 0)) == pdTRUE) {
+			char TopicName[MQTT_VAR_HEADER_BUFFER_LEN] = { 0 };
+			strcat(TopicName, TopicPrefix);
+			strcat(TopicName, Report.Suffix);
+			mqtt_publish(mqtt_client, TopicName, Report.Data,
+				     strlen(Report.Data), 0, 0, NULL, NULL);
+		}
+
+		break;
+	}
+
 	default:
 		break;
 	}

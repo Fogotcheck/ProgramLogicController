@@ -17,6 +17,7 @@
 #define MQTT_THR_STACK 512
 #define MQTT_THR_PRIORITIES (configMAX_PRIORITIES - 3)
 #define MQTT_TIMER_TICK_MS 1000
+#define MQTT_REPORT_QUEUE_SIZE 100
 
 enum MqttTimerState
 {

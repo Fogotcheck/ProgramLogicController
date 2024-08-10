@@ -1,6 +1,7 @@
 #ifndef __Mech_h__
 #define __Mech_h__
 
+#include "MqttClientEvent.h"
 #include "ActuatMechTypes.h"
 #include "ActuatMechEvent.h"
 #include "main.h"

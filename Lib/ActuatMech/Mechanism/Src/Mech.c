@@ -1,6 +1,7 @@
 #include "Mech.h"
 
 ActuatMech_t MechHandlers[ACTUAT_MECH_COUNT] = { 0 };
+extern QueueHandle_t ReportQueue;
 
 void MechThreads(void *arg);
 void MechEventHandler(EventBits_t Event, MechPrivateHandleType_t *MechHandle);
@@ -43,7 +44,7 @@ void MechThreads(void *arg)
 		ErrMessage("[%d]", Mech.ThrNum);
 	}
 
-	MechPrivateBuf_t Buf;
+	MechPrivateBuf_t Buf = { 0 };
 	MechSetBuf(&Buf, &Mech.Buf);
 	InfoMessage("Init[%d]", Mech.ThrNum);
 
@@ -67,17 +68,66 @@ void MechEventHandler(EventBits_t Event, MechPrivateHandleType_t *Mech)
 {
 	xEventGroupClearBits(MechHandlers[Mech->ThrNum].EventHandle, Event);
 	InfoMessage("event[%d]::0x%x", Mech->ThrNum, Event);
+
+	char ChSuffix[ACTUAT_MECH_SUFFIX_SIZE] = { 0 };
+	strcat(&ChSuffix[0], "/ch[");
+	itoa(Mech->ThrNum, &ChSuffix[4], 10);
+	strcat(ChSuffix, "]/");
+
 	switch (Event) {
 	case MECH_INIT: {
 		MechDeinit(Mech);
 		if (MechInitEventHandler(Mech)) {
 			ErrMessage("[%d]", Mech->ThrNum);
+			break;
 		}
+
+		ActuatMechReport_t InitReport = { 0 };
+		strcat(InitReport.Suffix, ChSuffix);
+		strcat(InitReport.Suffix, Mech->Interface->type);
+		for (uint16_t i = 0; i < ACTUAT_MECH_TYPE_PARAM_SIZE; i++) {
+			char TmpData[ACTUAT_MECH_DATA_SIZE] = "0x";
+			itoa(MechHandlers[Mech->ThrNum]
+				     .ChHandle.Interface.param[i],
+			     &TmpData[2], 16);
+			strcat(InitReport.Data, TmpData);
+			strcat(InitReport.Data, ";");
+		}
+		if (xQueueSend(ReportQueue, &InitReport, 10) != pdTRUE) {
+			vTaskDelay(100);
+			if (xQueueSend(ReportQueue, &InitReport, 10) !=
+			    pdTRUE) {
+				WarningMessage("[%d]", Mech->ThrNum);
+				break;
+			}
+		}
+		memset(&InitReport, 0, sizeof(InitReport));
+		strcat(InitReport.Suffix, ChSuffix);
+		strcat(InitReport.Suffix, Mech->Driver->type);
+		for (uint16_t i = 0; i < ACTUAT_MECH_TYPE_PARAM_SIZE; i++) {
+			char TmpData[ACTUAT_MECH_DATA_SIZE] = "0x";
+			itoa(MechHandlers[Mech->ThrNum].ChHandle.Driver.param[i],
+			     &TmpData[2], 16);
+			strcat(InitReport.Data, TmpData);
+			strcat(InitReport.Data, ";");
+		}
+		if (xQueueSend(ReportQueue, &InitReport, 10) != pdTRUE) {
+			vTaskDelay(100);
+			if (xQueueSend(ReportQueue, &InitReport, 10) !=
+			    pdTRUE) {
+				WarningMessage("[%d]", Mech->ThrNum);
+				break;
+			}
+		}
+		xEventGroupSetBits(MqttClientEvent, MQTT_SEND_REPORT);
+		xEventGroupSetBits(MechHandlers[Mech->ThrNum].EventHandle,
+				   MECH_START);
 		break;
 	}
 	case MECH_START: {
 		if (MechStartEventHandler(Mech)) {
 			ErrMessage("[%d]", Mech->ThrNum);
+			break;
 		}
 		break;
 	}
