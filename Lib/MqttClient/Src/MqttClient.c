@@ -40,6 +40,9 @@ static void mqtt_connection_cb(mqtt_client_t *client, void *arg,
 			       mqtt_connection_status_t status);
 static void mqtt_request_cb(void *arg, err_t err);
 
+static void mqtt_request_send_report_cb(__attribute__((unused)) void *arg,
+					err_t err);
+
 void MqttTimerCb(TimerHandle_t xTimer);
 
 int MqttClientInit(void)
@@ -129,12 +132,25 @@ void MqttEventsHandler(EventBits_t Event)
 	}
 	case MQTT_SEND_REPORT: {
 		ActuatMechReport_t Report;
+		EventBits_t EventCB = 0;
+		xEventGroupClearBits(MqttClientEvent, MQTT_SEND_REPORT_CB);
 		while ((xQueueReceive(ReportQueue, &Report, 0)) == pdTRUE) {
 			char TopicName[MQTT_VAR_HEADER_BUFFER_LEN] = { 0 };
 			strcat(TopicName, TopicPrefix);
 			strcat(TopicName, Report.Suffix);
-			mqtt_publish(mqtt_client, TopicName, Report.Data,
-				     strlen(Report.Data), 0, 0, NULL, NULL);
+			err_t PubState = mqtt_publish(
+				mqtt_client, TopicName, Report.Data,
+				strlen(Report.Data), 0, 0,
+				mqtt_request_send_report_cb, NULL);
+			EventCB = xEventGroupWaitBits(
+				MqttClientEvent, MQTT_SEND_REPORT_CB, pdTRUE,
+				pdTRUE, pdMS_TO_TICKS(MQTT_CONNECT_TIMOUT));
+			if (PubState != ERR_OK) {
+				ErrMessage("ret::%d", PubState);
+			}
+			if (EventCB != MQTT_SEND_REPORT_CB) {
+				ErrMessage("ret::%d", PubState);
+			}
 		}
 
 		break;
@@ -191,6 +207,17 @@ static void mqtt_incoming_data_cb(void *arg, const u8_t *data, u16_t len,
 		}
 	}
 	InfoMessage("%d\t%d", (int)len, (int)flags);
+}
+
+static void mqtt_request_send_report_cb(__attribute__((unused)) void *arg,
+					err_t err)
+{
+	InfoMessage("err %d", (int)err);
+	if (err != ERR_OK) {
+		xEventGroupSetBits(MqttClientEvent, MQTT_LINK_CONNECT);
+		return;
+	}
+	xEventGroupSetBits(MqttClientEvent, MQTT_SEND_REPORT_CB);
 }
 
 static void mqtt_connection_cb(mqtt_client_t *client, void *arg,

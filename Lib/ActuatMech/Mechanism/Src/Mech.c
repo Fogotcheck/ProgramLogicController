@@ -11,6 +11,8 @@ int MechInterfaceInit(MechPrivateHandleType_t *Mech);
 int MechDriverInit(MechPrivateHandleType_t *Mech);
 void MechDeinit(MechPrivateHandleType_t *Mech);
 int MechInitEventHandler(MechPrivateHandleType_t *Mech);
+int MechSendInitReport(MechPrivateHandleType_t *Mech, char *ChSuffix);
+void MechInterface_cb(EventGroupHandle_t xEventGroup);
 
 int MechStartEventHandler(MechPrivateHandleType_t *Mech);
 
@@ -81,45 +83,11 @@ void MechEventHandler(EventBits_t Event, MechPrivateHandleType_t *Mech)
 			ErrMessage("[%d]", Mech->ThrNum);
 			break;
 		}
+		if (MechSendInitReport(Mech, ChSuffix)) {
+			WarningMessage("[%d]", Mech->ThrNum);
+			break;
+		}
 
-		ActuatMechReport_t InitReport = { 0 };
-		strcat(InitReport.Suffix, ChSuffix);
-		strcat(InitReport.Suffix, Mech->Interface->type);
-		for (uint16_t i = 0; i < ACTUAT_MECH_TYPE_PARAM_SIZE; i++) {
-			char TmpData[ACTUAT_MECH_DATA_SIZE] = "0x";
-			itoa(MechHandlers[Mech->ThrNum]
-				     .ChHandle.Interface.param[i],
-			     &TmpData[2], 16);
-			strcat(InitReport.Data, TmpData);
-			strcat(InitReport.Data, ";");
-		}
-		if (xQueueSend(ReportQueue, &InitReport, 10) != pdTRUE) {
-			vTaskDelay(100);
-			if (xQueueSend(ReportQueue, &InitReport, 10) !=
-			    pdTRUE) {
-				WarningMessage("[%d]", Mech->ThrNum);
-				break;
-			}
-		}
-		memset(&InitReport, 0, sizeof(InitReport));
-		strcat(InitReport.Suffix, ChSuffix);
-		strcat(InitReport.Suffix, Mech->Driver->type);
-		for (uint16_t i = 0; i < ACTUAT_MECH_TYPE_PARAM_SIZE; i++) {
-			char TmpData[ACTUAT_MECH_DATA_SIZE] = "0x";
-			itoa(MechHandlers[Mech->ThrNum].ChHandle.Driver.param[i],
-			     &TmpData[2], 16);
-			strcat(InitReport.Data, TmpData);
-			strcat(InitReport.Data, ";");
-		}
-		if (xQueueSend(ReportQueue, &InitReport, 10) != pdTRUE) {
-			vTaskDelay(100);
-			if (xQueueSend(ReportQueue, &InitReport, 10) !=
-			    pdTRUE) {
-				WarningMessage("[%d]", Mech->ThrNum);
-				break;
-			}
-		}
-		xEventGroupSetBits(MqttClientEvent, MQTT_SEND_REPORT);
 		xEventGroupSetBits(MechHandlers[Mech->ThrNum].EventHandle,
 				   MECH_START);
 		break;
@@ -131,9 +99,90 @@ void MechEventHandler(EventBits_t Event, MechPrivateHandleType_t *Mech)
 		}
 		break;
 	}
+	case MECH_RAW_DATA: {
+		if (Mech->Driver->RaWDataInterpreter != NULL) {
+			Mech->Driver->RaWDataInterpreter(
+				MechHandlers[Mech->ThrNum].ChHandle.Driver.param,
+				Mech->Buf->Raw, Mech->Buf->Cplt);
+		} else {
+			WarningMessage("[%d]", Mech->ThrNum);
+		}
+		if (Mech->Driver->CpltToCharInterpreter != NULL) {
+			for (uint16_t i = 0;
+			     i < sizeof(Mech->Buf->Cplt) /
+					 sizeof(Mech->Buf->Cplt[0]);
+			     i++) {
+				ActuatMechReport_t RawReport = { 0 };
+				strcat(RawReport.Suffix, ChSuffix);
+				strcat(RawReport.Suffix, "data/");
+				strcat(RawReport.Suffix, Mech->Driver->type);
+				if (Mech->Driver->CpltToCharInterpreter(
+					    i, &Mech->Buf->Cplt[i],
+					    RawReport.Suffix, RawReport.Data)) {
+					continue;
+				}
+				if (xQueueSend(ReportQueue, &RawReport, 10) !=
+				    pdTRUE) {
+					if (xQueueSend(ReportQueue, &RawReport,
+						       10) != pdTRUE) {
+						WarningMessage("[%d]",
+							       Mech->ThrNum);
+						break;
+					}
+				}
+			}
+			xEventGroupSetBits(MqttClientEvent, MQTT_SEND_REPORT);
+		}
+		xEventGroupSetBits(MechHandlers[Mech->ThrNum].EventHandle,
+				   MECH_RAW_DATA);
+		break;
+	}
 	default:
 		break;
 	}
+	vTaskDelay(100);
+}
+
+int MechSendInitReport(MechPrivateHandleType_t *Mech, char *ChSuffix)
+{
+	ActuatMechReport_t InitReport = { 0 };
+	strcat(InitReport.Suffix, ChSuffix);
+	strcat(InitReport.Suffix, "param/");
+	strcat(InitReport.Suffix, Mech->Interface->type);
+	for (uint16_t i = 0; i < ACTUAT_MECH_TYPE_PARAM_SIZE; i++) {
+		char TmpData[ACTUAT_MECH_DATA_SIZE] = "0x";
+		itoa(MechHandlers[Mech->ThrNum].ChHandle.Interface.param[i],
+		     &TmpData[2], 16);
+		strcat(InitReport.Data, TmpData);
+		strcat(InitReport.Data, ";");
+	}
+	if (xQueueSend(ReportQueue, &InitReport, 10) != pdTRUE) {
+		vTaskDelay(100);
+		if (xQueueSend(ReportQueue, &InitReport, 10) != pdTRUE) {
+			WarningMessage("[%d]", Mech->ThrNum);
+			return -1;
+		}
+	}
+	memset(&InitReport, 0, sizeof(InitReport));
+	strcat(InitReport.Suffix, ChSuffix);
+	strcat(InitReport.Suffix, "param/");
+	strcat(InitReport.Suffix, Mech->Driver->type);
+	for (uint16_t i = 0; i < ACTUAT_MECH_TYPE_PARAM_SIZE; i++) {
+		char TmpData[ACTUAT_MECH_DATA_SIZE] = "0x";
+		itoa(MechHandlers[Mech->ThrNum].ChHandle.Driver.param[i],
+		     &TmpData[2], 16);
+		strcat(InitReport.Data, TmpData);
+		strcat(InitReport.Data, ";");
+	}
+	if (xQueueSend(ReportQueue, &InitReport, 10) != pdTRUE) {
+		vTaskDelay(100);
+		if (xQueueSend(ReportQueue, &InitReport, 10) != pdTRUE) {
+			WarningMessage("[%d]", Mech->ThrNum);
+			return -1;
+		}
+	}
+	xEventGroupSetBits(MqttClientEvent, MQTT_SEND_REPORT);
+	return 0;
 }
 
 int MechStartEventHandler(MechPrivateHandleType_t *Mech)
@@ -168,12 +217,16 @@ int MechInitEventHandler(MechPrivateHandleType_t *Mech)
 	DrivCompGetInterface(
 		&Mech->Interface,
 		MechHandlers[Mech->ThrNum].ChHandle.Interface.type);
+
 	DrivCompGetDriver(&Mech->Driver,
 			  MechHandlers[Mech->ThrNum].ChHandle.Driver.type);
 	if ((Mech->Driver == NULL) || (Mech->Interface == NULL)) {
 		ErrMessage("[%d]", Mech->ThrNum);
 		return -1;
 	}
+	Mech->Interface->Callback._cb = MechInterface_cb;
+	Mech->Interface->Callback.xEventGroup =
+		MechHandlers[Mech->ThrNum].EventHandle;
 
 	if (MechInterfaceInit(Mech)) {
 		ErrMessage("[%d]", Mech->ThrNum);
@@ -292,4 +345,9 @@ inline int MechDriverInit(MechPrivateHandleType_t *Mech)
 void MechSetBuf(MechPrivateBuf_t *Mem, MechPrivateBuf_t **Buf)
 {
 	*Buf = Mem;
+}
+
+void MechInterface_cb(EventGroupHandle_t xEventGroup)
+{
+	osEventFlagsSet(xEventGroup, MECH_RAW_DATA);
 }

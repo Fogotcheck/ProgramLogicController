@@ -13,6 +13,7 @@ enum MqttClientEventEnum {
 	MQTT_SEND_REPORT = (EventBits_t)(1 << 3),
 	MQTT_ALL_EVENTS = (EventBits_t)(MQTT_TRY_CONNECT) | (MQTT_DISCONNECT) |
 			  (MQTT_LINK_CONNECT) | (MQTT_SEND_REPORT),
+	MQTT_SEND_REPORT_CB = (EventBits_t)(1 << 8),
 };
 
 #endif //__MqttClientEvent_h__

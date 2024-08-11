@@ -4,6 +4,7 @@
 #include "MqttClientEvent.h"
 #include "ActuatMechTypes.h"
 #include "ActuatMechEvent.h"
+#include "cmsis_os2.h"
 #include "main.h"
 #include "DLog.h"
 #include "DrivComp.h"

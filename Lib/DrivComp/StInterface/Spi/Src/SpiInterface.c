@@ -3,7 +3,9 @@
 extern SPI_HandleTypeDef hspi1;
 extern SPI_HandleTypeDef hspi2;
 
-void *SpiHandle[2] = { &hspi1, &hspi2 };
+void *SpiHandle[] = { &hspi1, &hspi2 };
+DrivGpioType_t SpiGpio[] = { { SPI1_CS_GPIO_Port, SPI1_CS_Pin },
+			     { SPI2_CS_GPIO_Port, SPI2_CS_Pin } };
 
 int SpiInterfaceCheckFree(InterfaceTypes_t *Interface);
 int SpiInterfaceInit(InterfaceTypes_t *Interface, uint16_t count);
@@ -60,6 +62,8 @@ int SpiInterfaceInit(InterfaceTypes_t *Interface, uint16_t count)
 	Interface->Init = SpiInit;
 	Interface->DeInit = SpiDeInit;
 	Interface->SetDefault = SpiSetDefaultParam;
+	Interface->Gpio.Port = SpiGpio[count].Port;
+	Interface->Gpio.Pin = SpiGpio[count].Pin;
 	return 0;
 }
 
@@ -116,7 +120,7 @@ static int SpiSetDefaultParam(char *type, uint32_t *Param)
 		Param[DATASIZE] = SPI_DATASIZE_8BIT;
 		Param[CLKPOLARITY] = SPI_POLARITY_LOW;
 		Param[CLKPHASE] = SPI_PHASE_1EDGE;
-		Param[NSS] = SPI_NSS_HARD_OUTPUT;
+		Param[NSS] = SPI_NSS_SOFT;
 		Param[BAUDRATEPRESCALER] = SPI_BAUDRATEPRESCALER_8;
 		Param[FIRSTBIT] = SPI_FIRSTBIT_MSB;
 		Param[TIMODE] = SPI_TIMODE_DISABLE;

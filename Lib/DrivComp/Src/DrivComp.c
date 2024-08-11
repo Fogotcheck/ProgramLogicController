@@ -35,8 +35,6 @@ void DrivCompGetInterface(InterfaceTypes_t **Interface, char *type)
 	}
 }
 
-#include "DLog.h"
-
 void DrivCompGetDriver(DriverTypes_t **Drivers, char *type)
 {
 	*Drivers = NULL;
@@ -47,5 +45,5 @@ void DrivCompGetDriver(DriverTypes_t **Drivers, char *type)
 			return;
 		}
 	}
-	
 }
+
